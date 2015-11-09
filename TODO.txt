@@ -2,3 +2,7 @@
 - Support to send formatted text to the chat, including emoticons.
 - Create a form to deal with the badword filter. The form should read the badwords from a file. The format of the file is completely irrelevant (e.g. XML, JSON, CSV, or plain).
 - Handle disconnects gracefully.
+
+EXTRA OPTIONAL
+- Replace the message textbox with a Richtextbox, and add support for spell check.
+- Emoticons in message textbox (after it is a RTB).
