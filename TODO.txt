@@ -1,0 +1,4 @@
+- Improve the way basic connection information is displayed. Instead of showing the information at the top of the screen, an extra form with that information would be more readable.
+- Support to send formatted text to the chat, including emoticons.
+- Create a form to deal with the badword filter. The form should read the badwords from a file. The format of the file is completely irrelevant (e.g. XML, JSON, CSV, or plain).
+- Handle disconnects gracefully.
