@@ -390,7 +390,6 @@ public class ExRichTextBox : System.Windows.Forms.RichTextBox
     {
         // Move carret to the end of the text
         this.Select(this.TextLength, 0);
-
         InsertTextAsRtf(_text, _font, _textColor, _backColor);
     }
 
