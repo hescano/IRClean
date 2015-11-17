@@ -59,5 +59,17 @@ namespace IRClean.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to fuck, Intolerable
+        ///shit, ReallyBad
+        ///asshole, Bad
+        ///Ass, Ok.
+        /// </summary>
+        internal static string BadWords {
+            get {
+                return ResourceManager.GetString("BadWords", resourceCulture);
+            }
+        }
     }
 }
