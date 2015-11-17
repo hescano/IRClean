@@ -57,6 +57,7 @@
     <Compile Include="Helpers\ExRichTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Helpers\FileHelper.cs" />
     <Compile Include="Helpers\IntegerHelper.cs" />
     <Compile Include="Helpers\ThreadsHelper.cs" />
     <Compile Include="Main.cs">
@@ -177,6 +178,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\5.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BadWords.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
