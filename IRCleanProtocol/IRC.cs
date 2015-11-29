@@ -8,14 +8,14 @@ using System.Net.Sockets;
 namespace IRCleanProtocol
 {
     /// <summary>
-    /// This class controls the IRC protocol. It depends on the IRCCommand class to parse the commands.
+    /// This class controls the IRC protocol. It depends on the IRCCommand class to Parse the commands.
     /// </summary>
     public class IRC
     {
         //private members
-        private string previousCommand;
-        private StreamReader sr;
-        private StreamWriter sw;
+        private string _previousCommand;
+        private StreamReader _sr;
+        private StreamWriter _sw;
 
         //Properties
         public string Server { get; set; }
@@ -29,20 +29,20 @@ namespace IRCleanProtocol
         //Constructors
         public IRC(string server, int port, string nickname, string channel)
         {
-            this.Server = server;
-            this.Port = port;
-            this.Nickname = nickname;
-            this.Channel = channel;
+            Server = server;
+            Port = port;
+            Nickname = nickname;
+            Channel = channel;
         }
 
         //Events
         public event EventHandler Connected;
         public event EventHandler<ReceivedEventArgs> Received;
         public event EventHandler<UserListEventArgs> UserList;
-        public event EventHandler<String> UserJoined;
-        public event EventHandler<String> UserQuit;
+        public event EventHandler<string> UserJoined;
+        public event EventHandler<string> UserQuit;
         public event EventHandler<NicknameChangedEventArgs> NicknameChanged;
-        public event EventHandler<String> ServerMessage;
+        public event EventHandler<string> ServerMessage;
         public event EventHandler Quit;
 
         //Events implementation
@@ -53,10 +53,7 @@ namespace IRCleanProtocol
         protected virtual void OnConnected()
         {
             EventHandler handler = Connected;
-            if (handler != null)
-            {
-                handler(this, EventArgs.Empty);
-            }
+            handler?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -66,10 +63,7 @@ namespace IRCleanProtocol
         protected virtual void OnReceived(ReceivedEventArgs e)
         {
             EventHandler<ReceivedEventArgs> handler = Received;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            handler?.Invoke(this, e);
         }
 
         /// <summary>
@@ -79,36 +73,29 @@ namespace IRCleanProtocol
         protected virtual void OnUserList(UserListEventArgs e)
         {
             EventHandler<UserListEventArgs> handler = UserList;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            handler?.Invoke(this, e);
         }
 
         /// <summary>
         /// Triggers when an user has entered the channel.
         /// </summary>
         /// <param name="userJoined">Nickname of the user who joined</param>
-        protected virtual void OnUserJoined(String userJoined)
+        protected virtual void OnUserJoined(string userJoined)
         {
-            EventHandler<String> handler = UserJoined;
-            if (handler != null)
-            {
-                handler(this, userJoined);
-            }
+            if (userJoined == null) throw new ArgumentNullException(nameof(userJoined));
+            EventHandler<string> handler = UserJoined;
+            handler?.Invoke(this, userJoined);
         }
 
         /// <summary>
         /// Triggers when an user parts or quits the channel
         /// </summary>
         /// <param name="userQuit">Nickname of the user who left</param>
-        protected virtual void OnUserQuit(String userQuit)
+        protected virtual void OnUserQuit(string userQuit)
         {
-            EventHandler<String> handler = UserQuit;
-            if (handler != null)
-            {
-                handler(this, userQuit);
-            }
+            if (userQuit == null) throw new ArgumentNullException(nameof(userQuit));
+            EventHandler<string> handler = UserQuit;
+            handler?.Invoke(this, userQuit);
         }
 
         /// <summary>
@@ -117,10 +104,7 @@ namespace IRCleanProtocol
         protected virtual void OnQuit()
         {
             EventHandler handler = Quit;
-            if (handler != null)
-            {
-                handler(this, null);
-            }
+            handler?.Invoke(this, null);
         }
 
         /// <summary>
@@ -129,26 +113,25 @@ namespace IRCleanProtocol
         /// <param name="oldNickname">What the nickname used to be</param>
         /// <param name="newNickname">The new nickname being used</param>
         /// <param name="type">Defines if the user changed his/her name, or if the server assigned a nickname</param>
-        protected virtual void OnNicknameChanged(String oldNickname, String newNickname, NicknameChangedType type)
+        protected virtual void OnNicknameChanged(string oldNickname, string newNickname, NicknameChangedType type)
         {
+            if (oldNickname == null) throw new ArgumentNullException(nameof(oldNickname), "Old nickname not provided.");
+            if (newNickname == null) throw new ArgumentNullException(nameof(newNickname), "New nickname not provided.");
+            if (!Enum.IsDefined(typeof(NicknameChangedType), type))
+                throw new ArgumentOutOfRangeException(nameof(type));
+
             EventHandler<NicknameChangedEventArgs> handler = NicknameChanged;
-            if (handler != null)
-            {
-                handler(this, new NicknameChangedEventArgs() { NewNickname = newNickname, OldNickname = oldNickname, Type = type });
-            }
+            handler?.Invoke(this, new NicknameChangedEventArgs { NewNickname = newNickname, OldNickname = oldNickname, Type = type });
         }
 
         /// <summary>
         /// Triggers when we want to let the UI know of a displayable message
         /// </summary>
         /// <param name="message">Message to be displayed</param>
-        protected virtual void OnServerMessage(String message)
+        protected virtual void OnServerMessage(string message)
         {
-            EventHandler<String> handler = ServerMessage;
-            if (handler != null)
-            {
-                handler(this, message);
-            }
+            EventHandler<string> handler = ServerMessage;
+            handler?.Invoke(this, message);
         }
 
         //Protocol Implementation
@@ -158,41 +141,38 @@ namespace IRCleanProtocol
         /// </summary>
         public void Connect()
         {
-            TcpClient client = null;
-            try
-            {
-                //Creates a TcpClient object to connect to a IRC server
-                //handle the connection async, so that the socket does not 
-                //block the application
-                client = new TcpClient();
-                client.BeginConnect(this.Server, this.Port, new AsyncCallback(connectCallback), client);
-            }
-            catch
-            {
-                throw;
-            }
+            //Creates a TcpClient object to connect to a IRC server
+            //handle the connection async, to avoid blocking UIs
+            var client = new TcpClient();
+            client.BeginConnect(Server, Port, ConnectCallback, client);
         }
 
-        private void connectCallback(IAsyncResult result)
+        /// <summary>
+        /// Handles the callback of the connection.
+        /// </summary>
+        /// <param name="result">Async result.</param>
+        private void ConnectCallback(IAsyncResult result)
         {
             TcpClient client = null;
             try
             {
-                client = ((TcpClient)result.AsyncState);
+                client = (TcpClient)result.AsyncState;
                 Stream s = client.GetStream();
 
-                sr = new StreamReader(s,  System.Text.Encoding.Default, true);
-                sw = new StreamWriter(s);
-                sw.AutoFlush = true;
+                _sr = new StreamReader(s, System.Text.Encoding.Default, true);
+                _sw = new StreamWriter(s)
+                {
+                    AutoFlush = true
+                };
 
-                //if we get here, we have a successful TCP connection
+                //we have a successful TCP connection
                 //send first command, to establish an IRC connection
-                sendNick();
-                sendUser();
+                SendNick();
+                SendUser();
 
                 while (true)
                 {
-                    readProtocol();
+                    ReadProtocol();
                 }
             }
             catch (Exception ex)
@@ -202,167 +182,167 @@ namespace IRCleanProtocol
             }
             finally
             {
-                if (client != null)
-                    client.Close();
+                client?.Close();
             }
         }
 
-        private void sendUser()
+        /// <summary>
+        /// Sends the username to the server
+        /// </summary>
+        private void SendUser()
         {
-            sendCommand("USER " + Nickname + " 8 * : a clean IRC Client.");
+            SendCommand("USER " + Nickname + " 8 * : a clean IRC Client.");
         }
 
-        private void sendNick()
+        /// <summary>
+        /// Sends the nickname to the server
+        /// </summary>
+        private void SendNick()
         {
-            sendCommand("NICK " + Nickname);
+            SendCommand("NICK " + Nickname);
         }
 
         public void Close()
         {
-            sendCommand("QUIT");
+            SendCommand("QUIT");
         }
 
         /// <summary>
         /// IRC protocol implementation per IRC RFC 2812 https://tools.ietf.org/html/rfc2812
         /// </summary>
-        public void readProtocol()
+        public void ReadProtocol()
         {
-            string command = sr.ReadLine();
+            var command = _sr.ReadLine();
             Console.WriteLine(command);
 
-            IRCCommand cmd = IRCCommand.parse(command);
-            if (command != null && cmd != null)
+            IRCCommand cmd = IRCCommand.Parse(command);
+            if (command == null || cmd == null) return;
+
+            switch (cmd.Command)
             {
-                switch (cmd.Command)
-                {
-                    case "001": //RPL_WELCOME
-                    case "002": //RPL_YOURHOST
-                    case "003": //RPL_CREATED
-                    case "004": //RPL_MYINFO
-                    case "NOTICE": //NOTICE
-                        //OnReceived(new ReceivedEventArgs() { Message = cmd.ToString(), Type = MessageType.MESSAGE_FROM_SERVER });
-                        OnServerMessage(command);
-                        sendCommand("JOIN " + this.Channel);
-                        break;
-                    case "332":
-                        OnServerMessage(command);
-                        break;
-                    case "353": //RPL_NAMREPLY
-                        //make sure if for this channel,
-                        //i think i might get lists for all
-                        //channels in the server.
-                        if (cmd.Arguments[2] == this.Channel)
+                case "001": //RPL_WELCOME
+                case "002": //RPL_YOURHOST
+                case "003": //RPL_CREATED
+                case "004": //RPL_MYINFO
+                case "NOTICE": //NOTICE
+                    OnServerMessage(command);
+                    SendCommand("JOIN " + Channel);
+                    break;
+                case "332":
+                    OnServerMessage(command);
+                    break;
+                case "353": //RPL_NAMREPLY
+                    //make sure if for this channel,
+                    //i think i might get lists for all
+                    //channels in the server.
+                    if (cmd.Arguments[2] == Channel)
+                    {
+                        //lists of users for the channel we are connected
+                        //lets ignore the type of channels for now (@, =, *)
+                        var ulea = new UserListEventArgs
                         {
-                            //lists of users for the channel we are connected
-                            //lets ignore the type of channels for now (@, =, *)
-                            UserListEventArgs ulea = new UserListEventArgs();
+                            Users = new List<string>(cmd.Arguments[3].Split(' '))
+                        };
 
-                            ulea.Users = new List<String>(cmd.Arguments[3].Split(' '));
 
-                            //checks if the command before this one was a 353,
-                            //if it is, that means the list of users was not completely
-                            //received, so this packet is a continuation of the list.
-                            //otherwise, this is the beginning of the list.
-
-                            if (previousCommand != "353")
-                            {
-                                ulea.Type = UserListMessageType.LIST_START;
-                            }
-                            else if (previousCommand == "353")
-                            {
-                                ulea.Type = UserListMessageType.LIST_CONTINUE;
-                            }
-
-                            OnUserList(ulea);
-                        }
-                        break;
-                    case "366": //RPL_ENDOFNAMES
-                        //this is the end of the list of users.
-                        OnUserList(new UserListEventArgs() { Type = UserListMessageType.LIST_END });
-                        break;
-                    case "433": //ERR_NICKNAMEINUSE
-                        //tries to log in with a different nickname
-                        sendCommand("NICK " + this.Nickname + "_" + new Random().Next(100));
-                        break;
-                    case "PRIVMSG": //new message to the channel, or private
-                        ReceivedEventArgs rec = new ReceivedEventArgs();
-                        rec.MessageFrom = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!"));
-
-                        //TODO: handle messages that are for specific users, and show them in a unique way
-                        //maybe something like FromUser > ToUser: Hello, World!
-
-                        //lets make it easy by just worrying about
-                        //public and private messages.
-                        if (cmd.Arguments[0] == this.Nickname)
+                        //checks if the command before this one was a 353,
+                        //if it is, that means the list of users was not completely
+                        //received, so this packet is a continuation of the list.
+                        //otherwise, this is the beginning of the list.
+                        if (_previousCommand != "353")
                         {
-                            rec.Type = MessageType.MESSAGE_TO_ME;
+                            ulea.Type = UserListMessageType.ListStart;
                         }
-                        else
+                        else if (_previousCommand == "353")
                         {
-                            rec.Type = MessageType.MESSAGE_TO_CHANNEL;
+                            ulea.Type = UserListMessageType.ListContinue;
                         }
 
-                        rec.Message = cmd.Arguments[1];
-                        OnReceived(rec);
-                        break;
-                    case "PING": //reply with pong :p
-                        sendCommand("PONG " + command.Substring(5));
-                        break;
-                    case "JOIN": //someone joined the channel
-                        //I have two options, I could either re-ask for the list
-                        //or I can just add this specific user
-                        //if the channel has thousand of users, asking for the entire list
-                        //could be a pain... so lets just get this user
-                        string userJoined = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!"));
-                        if (userJoined != this.Nickname)
-                        {
-                            OnUserJoined(userJoined);
-                        }
-                        else
-                        {
-                            //this is when I joined the channel.
-                            //lets just say this is when we connected
-                            OnConnected();
-                            IsConnected = true;
-                        }
-                        break;
-                    case "PART": //someone has left/quit the channel
-                    case "QUIT":
-                        string userLeft = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!"));
-                        if (userLeft != this.Nickname)
-                        {
-                            OnUserQuit(userLeft);
-                        }
-                        else
-                        { 
-                            //left chatroom gracefully
-                            OnQuit();
-                            IsConnected = false;
-                        }
-                        break;
-                    case "NICK": //change in nick
-                        string newNickname;
-                        string oldNickname;
+                        OnUserList(ulea);
+                    }
+                    break;
+                case "366": //RPL_ENDOFNAMES
+                    //this is the end of the list of users.
+                    OnUserList(new UserListEventArgs() { Type = UserListMessageType.ListEnd });
+                    break;
+                case "433": //ERR_NICKNAMEINUSE
+                    //tries to log in with a different nickname
+                    SendCommand("NICK " + Nickname + "_" + new Random().Next(100));
+                    break;
+                case "PRIVMSG": //new message to the channel, or private
+                    ReceivedEventArgs rec = new ReceivedEventArgs
+                    {
+                        MessageFrom = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!", StringComparison.Ordinal))
+                    };
 
-                        if (cmd.Arguments != null && cmd.Arguments.Count > 0)
-                        {
-                            newNickname = cmd.Arguments[0];
-                            oldNickname = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!"));
+                    //TODO: handle messages that are for specific users, and show them in a unique way
+                    //maybe something like FromUser > ToUser: Hello, World!
 
-                            //raise this event to update the nickname in the lists
-                            OnNicknameChanged(oldNickname, newNickname, NicknameChangedType.NICK_CHANGED);
-                        }
+                    //let us worry about
+                    //public and private messages only
+                    if (cmd.Arguments[0] == Nickname)
+                    {
+                        rec.Type = MessageType.MessageToMe;
+                    }
+                    else
+                    {
+                        rec.Type = MessageType.MessageToChannel;
+                    }
 
-                        break;
-                    case "ERROR":
+                    rec.Message = cmd.Arguments[1];
+                    OnReceived(rec);
+                    break;
+                case "PING": //reply with pong :p
+                    SendCommand("PONG " + command.Substring(5));
+                    break;
+                case "JOIN": //someone joined the channel
+                    //two options: We could either re-ask for the entire list
+                    //or simply add the specific user
+                    string userJoined = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!", StringComparison.Ordinal));
+                    if (userJoined != Nickname)
+                    {
+                        OnUserJoined(userJoined);
+                    }
+                    else
+                    {
+                        //this is when I joined the channel.
+                        OnConnected();
+                        IsConnected = true;
+                    }
+                    break;
+                case "PART": //someone has left/quit the channel
+                case "QUIT":
+                    string userLeft = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!", StringComparison.Ordinal));
+                    if (userLeft != Nickname)
+                    {
+                        OnUserQuit(userLeft);
+                    }
+                    else
+                    {
+                        //leave chatroom gracefully
                         OnQuit();
                         IsConnected = false;
-                        break;
-                }
+                    }
+                    break;
+                case "NICK": //change in nick
 
-                previousCommand = cmd.Command;
+                    if (cmd.Arguments != null && cmd.Arguments.Count > 0)
+                    {
+                        var newNickname = cmd.Arguments[0];
+                        var oldNickname = cmd.Prefix.Substring(0, cmd.Prefix.IndexOf("!", StringComparison.Ordinal));
 
+                        //raise this event to update the nickname in the lists
+                        OnNicknameChanged(oldNickname, newNickname, NicknameChangedType.NickChanged);
+                    }
+
+                    break;
+                case "ERROR":
+                    OnQuit();
+                    IsConnected = false;
+                    break;
             }
+
+            _previousCommand = cmd.Command;
         }
 
         //Commands sent to the server
@@ -370,9 +350,9 @@ namespace IRCleanProtocol
         /// <summary>
         /// Sends a request for the users in the channel
         /// </summary>
-        public void refreshUsers()
+        public void RefreshUsers()
         {
-            sendCommand("NAMES " + Channel);
+            SendCommand("NAMES " + Channel);
         }
 
         /// <summary>
@@ -380,21 +360,21 @@ namespace IRCleanProtocol
         /// </summary>
         /// <param name="messageTo">Nicknaame of the person or channel to send the message to.</param>
         /// <param name="message">Actual text message to be sent.</param>
-        public void sendMessage(string messageTo, string message)
+        public void SendMessage(string messageTo, string message)
         {
-            sendCommand("PRIVMSG " + messageTo + " :" + message);
+            SendCommand("PRIVMSG " + messageTo + " :" + message);
         }
 
         /// <summary>
         /// Sends a command to the server.
         /// </summary>
         /// <param name="command">Actual command being sent.</param>
-        private void sendCommand(string command)
+        private void SendCommand(string command)
         {
-            sw.Write(command + "\r\n");
+            _sw.Write(command + "\r\n");
 
             //flush the stream writer
-            sw.Flush();
+            _sw.Flush();
         }
 
     }

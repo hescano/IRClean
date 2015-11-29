@@ -54,7 +54,7 @@ namespace IRClean
         /// </summary>
         void OnNicknameChanged(object sender, NicknameChangedEventArgs e)
         {
-            if (e.Type == NicknameChangedType.NICK_CHANGED)
+            if (e.Type == NicknameChangedType.NickChanged)
             {
                 //get the user in the user list for update
                 int index = this.listUsers.Items.IndexOf(e.OldNickname);
@@ -103,7 +103,7 @@ namespace IRClean
         /// </summary>
         void OnUserList(object sender, UserListEventArgs e)
         {
-            if (e.Type == UserListMessageType.LIST_START)
+            if (e.Type == UserListMessageType.ListStart)
             {
                 //beginning of list, lets add users
                 this.UIThread(() => this.listUsers.Items.Clear());
@@ -117,7 +117,7 @@ namespace IRClean
                 }
             }
 
-            if (e.Type == UserListMessageType.LIST_START || e.Type == UserListMessageType.LIST_CONTINUE)
+            if (e.Type == UserListMessageType.ListStart || e.Type == UserListMessageType.ListContinue)
             {
                 //add users to list if the list just starts, or if it continues
                 if (e.Users != null && e.Users.Count > 0)
@@ -125,7 +125,7 @@ namespace IRClean
                     users.AddRange(e.Users);
                 }
             }
-            else if (e.Type == UserListMessageType.LIST_END)
+            else if (e.Type == UserListMessageType.ListEnd)
             {
                 //this adds them all at the end,
                 //versus adding chunks as we get them
@@ -153,18 +153,18 @@ namespace IRClean
         {
             if (e != null)
             {
-                if (e.Type == MessageType.MESSAGE_FROM_SERVER)
+                if (e.Type == MessageType.MessageFromServer)
                 {
                     this.UIThread(() => this.rtbMessage.ShowSystemMessage(e.Message));
                 }
-                else if (e.Type == MessageType.MESSAGE_TO_ME)
+                else if (e.Type == MessageType.MessageToMe)
                 {
                     Private prv = getPrivateByUser(e.MessageFrom);
 
                     this.UIThread(() => prv.rtbMessage.ShowMessage(e.MessageFrom, e.Message));
                     this.UIThread(() => prv.Show());
                 }
-                else if (e.Type == MessageType.MESSAGE_TO_CHANNEL)
+                else if (e.Type == MessageType.MessageToChannel)
                 {
                     this.UIThread(() => this.rtbMessage.ShowMessage(e.MessageFrom, e.Message));
                 }
@@ -216,7 +216,7 @@ namespace IRClean
         {
             if (txtMessage.Text != "")
             {
-                Connection.sendMessage(Connection.Channel, txtMessage.Text);
+                Connection.SendMessage(Connection.Channel, txtMessage.Text);
                 rtbMessage.ShowMessage(Connection.Nickname, txtMessage.Text);
                 txtMessage.Text = "";
             }
@@ -234,7 +234,7 @@ namespace IRClean
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.listUsers.Items.Clear();
-            Connection.refreshUsers();
+            Connection.RefreshUsers();
         }
 
         private void rtbMessage_LinkClicked(object sender, LinkClickedEventArgs e)

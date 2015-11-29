@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IRCleanProtocol
 {
+    /// <summary>
+    /// Used to handle when a message has been received
+    /// </summary>
     public class ReceivedEventArgs : EventArgs
     {
         public string Message { get; set; }
@@ -14,10 +13,13 @@ namespace IRCleanProtocol
         public string MessageTo { get; set; }
     }
 
+    /// <summary>
+    /// Enum for the different message types
+    /// </summary>
     public enum MessageType
     { 
-        MESSAGE_FROM_SERVER = 1,
-        MESSAGE_TO_CHANNEL = 2,
-        MESSAGE_TO_ME = 3
+        MessageFromServer = 1,
+        MessageToChannel = 2,
+        MessageToMe = 3
     }
 }

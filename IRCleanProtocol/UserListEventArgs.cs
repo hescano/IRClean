@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace IRCleanProtocol
 {
+    /// <summary>
+    /// Used to handle users when the client requests them
+    /// </summary>
     public class UserListEventArgs:EventArgs
     {
-       public List<String> Users { get; set; }
+       public List<string> Users { get; set; }
        public UserListMessageType Type { get; set; }
     }
-
+    
+    /// <summary>
+    /// Enum for the different packets received
+    /// </summary>
     public enum UserListMessageType
     {
-        LIST_START = 1,
-        LIST_CONTINUE = 2,
-        LIST_END = 3
+        ListStart = 1,
+        ListContinue = 2,
+        ListEnd = 3
     }
 }

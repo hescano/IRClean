@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IRCleanProtocol
 {
+    /// <summary>
+    /// Used to handle when a nickname changes in the chat.
+    /// </summary>
    public class NicknameChangedEventArgs : EventArgs
     {
        public string OldNickname { get; set; }
@@ -13,9 +12,12 @@ namespace IRCleanProtocol
        public NicknameChangedType Type { get; set; }
     }
 
+    /// <summary>
+    /// Enum for the different nickname states
+    /// </summary>
    public enum NicknameChangedType
    { 
-       NICK_CHANGED = 1,
-       NICK_ASSIGNED = 2
+       NickChanged = 1,
+       NickAssigned = 2
    }
 }

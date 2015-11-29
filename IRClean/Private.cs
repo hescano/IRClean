@@ -47,7 +47,7 @@ namespace IRClean
         {
             if (Connection != null)
             {
-                Connection.sendMessage(this.Tag.ToString(), this.textBox1.Text);
+                Connection.SendMessage(this.Tag.ToString(), this.textBox1.Text);
                 rtbMessage.ShowMessage(Connection.Nickname, this.textBox1.Text);
                 this.textBox1.Text = "";
             }
